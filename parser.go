@@ -14,6 +14,9 @@ type Parser struct {
 	curToken  Token
 	peekToken Token
 	errors    []string
+
+	prefixParseFns map[TokenType]prefixParseFn
+	infixParseFns  map[TokenType]infixParseFn
 }
 
 func NewParser(l *Lexer) *Parser {
@@ -23,6 +26,11 @@ func NewParser(l *Lexer) *Parser {
 	p.nextToken()
 	return p
 }
+
+func (p *Parser) registerPrefix(tokenType TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+func (p *Parser) registerInfix(tokenType TokenType, fn infixParseFn) { p.infixParseFns[tokenType] = fn }
 
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
