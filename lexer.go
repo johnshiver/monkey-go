@@ -123,6 +123,8 @@ func (l *Lexer) NextToken() Token {
 			tok.Type = LookupIdent(tok.Literal)
 			return tok
 		}
+
+		// TODO: how does integer overflow work?
 		if isDigit(l.ch) {
 			tok.Type = INT
 			tok.Literal = l.readNumber()
