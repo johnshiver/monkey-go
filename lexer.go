@@ -24,6 +24,14 @@ func (l *Lexer) readChar() {
 	l.readPosition += 1
 }
 
+// peekChar is like readChar, but doesnt increment reader
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+	return l.input[l.readPosition]
+}
+
 func (l *Lexer) readIdentifier() string {
 	startPos := l.position
 	for isLetter(l.ch) {
@@ -58,8 +66,6 @@ func (l *Lexer) NextToken() Token {
 	var tok Token
 	l.skipWhitespace()
 	switch l.ch {
-	case '=':
-		tok = newToken(ASSIGN, l.ch)
 	case ';':
 		tok = newToken(SEMICOLON, l.ch)
 	case '(':
@@ -77,7 +83,15 @@ func (l *Lexer) NextToken() Token {
 	case '-':
 		tok = newToken(MINUS, l.ch)
 	case '!':
-		tok = newToken(BANG, l.ch)
+		// could be != or !
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = Token{Type: NOT_EQ, Literal: literal}
+		} else {
+			tok = newToken(BANG, l.ch)
+		}
 	case '*':
 		tok = newToken(ASTERISK, l.ch)
 	case '/':
@@ -86,10 +100,23 @@ func (l *Lexer) NextToken() Token {
 		tok = newToken(LT, l.ch)
 	case '>':
 		tok = newToken(GT, l.ch)
+	case '=':
+		// could be == or =
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = Token{Type: EQ, Literal: literal}
+		} else {
+			tok = newToken(ASSIGN, l.ch)
+		}
 	case 0:
 		tok.Literal = ""
 		tok.Type = EOF
 	default:
+		// NOTE: read ident + read number dont need to readChar
+		// so can return immediately
+
 		// not at a token, so we need to do some read logic
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
@@ -103,6 +130,7 @@ func (l *Lexer) NextToken() Token {
 		}
 		tok = newToken(ILLEGAL, l.ch)
 	}
+	// after token read is finished, advance cursor
 	l.readChar()
 	return tok
 }

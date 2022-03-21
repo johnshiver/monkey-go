@@ -20,8 +20,12 @@ func TestNextToken(t *testing.T) {
 	   return true;
 	 } else {
 	   return false;
-	}`
-	tests := []struct {
+	}
+    10 == 10;
+    10 != 9;
+`
+	// TODO: could replace anonymous struct with Token
+	expectedTokens := []struct {
 		expectedType    TokenType
 		expectedLiteral string
 	}{
@@ -97,10 +101,20 @@ func TestNextToken(t *testing.T) {
 		{SEMICOLON, ";"},
 		{RBRACE, "}"},
 
+		{INT, "10"},
+		{EQ, "=="},
+		{INT, "10"},
+		{SEMICOLON, ";"},
+
+		{INT, "10"},
+		{NOT_EQ, "!="},
+		{INT, "9"},
+		{SEMICOLON, ";"},
+
 		{EOF, ""},
 	}
 	l := NewLexer(input)
-	for _, tt := range tests {
+	for _, tt := range expectedTokens {
 		tok := l.NextToken()
 		require.Equal(t, tt.expectedType, tok.Type)
 		require.Equal(t, tt.expectedLiteral, tok.Literal)
