@@ -1,6 +1,7 @@
 package monkey_interpreter
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -14,12 +15,9 @@ func TestLetStatements(t *testing.T) {
 	p := NewParser(l)
 	program := p.ParseProgram()
 	checkParserErrors(t, p)
-	if program == nil { // TODO:maybe should be an error?
-		t.Fatalf("ParseProgram() returned nil")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d", len(program.Statements))
-	}
+	require.NotNil(t, p)
+	require.Len(t, program.Statements, 3)
+
 	tests := []struct {
 		expectedIdentifier string
 	}{
