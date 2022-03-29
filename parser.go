@@ -21,6 +21,17 @@ const (
 	CALL        // myFunction(X)
 )
 
+var precedences = map[TokenType]int{
+	EQ:       EQUALS,
+	NOT_EQ:   EQUALS,
+	LT:       LESSGREATER,
+	GT:       LESSGREATER,
+	PLUS:     SUM,
+	MINUS:    SUM,
+	SLASH:    PRODUCT,
+	ASTERISK: PRODUCT,
+}
+
 type Parser struct {
 	l         *Lexer
 	curToken  Token
@@ -41,6 +52,16 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(INT, p.parseIntegerLiteral)
 	p.registerPrefix(BANG, p.parsePrefixExpression)
 	p.registerPrefix(MINUS, p.parsePrefixExpression)
+
+	p.infixParseFns = make(map[TokenType]infixParseFn)
+	p.registerInfix(PLUS, p.parseInfixExpression)
+	p.registerInfix(MINUS, p.parseInfixExpression)
+	p.registerInfix(SLASH, p.parseInfixExpression)
+	p.registerInfix(ASTERISK, p.parseInfixExpression)
+	p.registerInfix(EQ, p.parseInfixExpression)
+	p.registerInfix(NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(LT, p.parseInfixExpression)
+	p.registerInfix(GT, p.parseInfixExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -181,4 +202,18 @@ func (p *Parser) expectPeek(t TokenType) bool {
 func (p *Parser) peekError(t TokenType) {
 	msg := fmt.Sprintf("expected next token to be %s, got %s instead", t, p.peekToken.Type)
 	p.errors = append(p.errors, msg)
+}
+
+func (p *Parser) peekPrecedence() int {
+	if prec, ok := precedences[p.peekToken.Type]; ok {
+		return prec
+	}
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if prec, ok := precedences[p.curToken.Type]; ok {
+		return prec
+	}
+	return LOWEST
 }
