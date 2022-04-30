@@ -74,6 +74,7 @@ func (p *Parser) registerPrefix(tokenType TokenType, fn prefixParseFn) {
 }
 func (p *Parser) registerInfix(tokenType TokenType, fn infixParseFn) { p.infixParseFns[tokenType] = fn }
 
+// nextToken advances token and peekToken
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
@@ -152,12 +153,17 @@ func (p *Parser) parseExpression(precedence int) Expression {
 		return nil
 	}
 	leftExp := prefix()
-	for !p.peekTokenIs(SEMICOLON) && precedence < p.peekPrecedence() {
+
+	// NOTE: SEMICOLON check is unnecessary, but helps to show that the statement is complete
+	//for !p.peekTokenIs(SEMICOLON) && precedence < p.peekPrecedence() {
+	for precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
+			// TODO: should this be an error
 			return leftExp
 		}
 		p.nextToken()
+		// this is where all the nesting can happen
 		leftExp = infix(leftExp)
 	}
 	return leftExp
@@ -224,6 +230,7 @@ func (p *Parser) peekError(t TokenType) {
 	p.errors = append(p.errors, msg)
 }
 
+// peekPrecedence returns precedence value for the peekToken, returns LOWEST if no match
 func (p *Parser) peekPrecedence() int {
 	if prec, ok := precedences[p.peekToken.Type]; ok {
 		return prec
