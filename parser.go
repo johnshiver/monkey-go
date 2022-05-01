@@ -52,6 +52,8 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(INT, p.parseIntegerLiteral)
 	p.registerPrefix(BANG, p.parsePrefixExpression)
 	p.registerPrefix(MINUS, p.parsePrefixExpression)
+	p.registerPrefix(TRUE, p.parseBoolean)
+	p.registerPrefix(FALSE, p.parseBoolean)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -154,6 +156,9 @@ func (p *Parser) parseExpression(precedence int) Expression {
 	}
 	leftExp := prefix()
 
+	// NOTE: keep in mind for loop will continue calling infix for as long as the precedence
+	//       remains less than the peek precedence
+
 	// NOTE: SEMICOLON check is unnecessary, but helps to show that the statement is complete
 	//for !p.peekTokenIs(SEMICOLON) && precedence < p.peekPrecedence() {
 	for precedence < p.peekPrecedence() {
@@ -183,6 +188,10 @@ func (p *Parser) parseIntegerLiteral() Expression {
 	}
 	lit.Value = value
 	return lit
+}
+
+func (p *Parser) parseBoolean() Expression {
+	return &Boolean{Token: p.curToken, Value: p.curTokenIs(TRUE)}
 }
 
 func (p *Parser) parsePrefixExpression() Expression {
