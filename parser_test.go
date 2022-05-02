@@ -97,7 +97,7 @@ func TestBooleanExpression(t *testing.T) {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
 			program.Statements[0])
 	}
-	boolExp, ok := stmt.Expression.(*Boolean)
+	boolExp, ok := stmt.Expression.(*BooleanLiteral)
 	if !ok {
 		t.Fatalf("exp not *ast.Identifier. got=%T", stmt.Expression)
 	}
@@ -574,9 +574,9 @@ func testInfixExpression(t *testing.T, exp Expression, left interface{}, operato
 }
 
 func testBooleanLiteral(t *testing.T, exp Expression, value bool) bool {
-	bo, ok := exp.(*Boolean)
+	bo, ok := exp.(*BooleanLiteral)
 	if !ok {
-		t.Errorf("exp not *ast.Boolean. got=%T", exp)
+		t.Errorf("exp not *ast.BooleanLiteral. got=%T", exp)
 		return false
 	}
 	require.Equal(t, bo.Value, value)

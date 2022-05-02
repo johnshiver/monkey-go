@@ -199,7 +199,7 @@ func (p *Parser) parseIntegerLiteral() Expression {
 }
 
 func (p *Parser) parseBoolean() Expression {
-	return &Boolean{Token: p.curToken, Value: p.curTokenIs(TRUE)}
+	return &BooleanLiteral{Token: p.curToken, Value: p.curTokenIs(TRUE)}
 }
 
 func (p *Parser) parseGroupedExpression() Expression {
