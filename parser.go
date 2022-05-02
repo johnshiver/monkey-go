@@ -13,19 +13,19 @@ type (
 const (
 	_ int = iota
 	LOWEST
-	EQUALS      // ==
-	LESSGREATER // > or <
-	SUM         // +
-	PRODUCT     // *
-	PREFIX      // -X or !X
-	CALL        // myFunction(X)
+	EQUALS       // ==
+	LESS_GREATER // > or <
+	SUM          // +
+	PRODUCT      // *
+	PREFIX       // -X or !X
+	CALL         // myFunction(X)
 )
 
 var precedences = map[TokenType]int{
 	EQ:       EQUALS,
 	NOT_EQ:   EQUALS,
-	LT:       LESSGREATER,
-	GT:       LESSGREATER,
+	LT:       LESS_GREATER,
+	GT:       LESS_GREATER,
 	PLUS:     SUM,
 	MINUS:    SUM,
 	SLASH:    PRODUCT,
@@ -55,6 +55,7 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(TRUE, p.parseBoolean)
 	p.registerPrefix(FALSE, p.parseBoolean)
 	p.registerPrefix(LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(IF, p.parseIfExpression)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -202,6 +203,46 @@ func (p *Parser) parseGroupedExpression() Expression {
 		return nil
 	}
 	return exp
+}
+
+func (p *Parser) parseIfExpression() Expression {
+	expression := &IfExpression{Token: p.curToken}
+	if !p.expectPeek(LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	expression.Condition = p.parseExpression(LOWEST)
+	if !p.expectPeek(RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(LBRACE) {
+		return nil
+	}
+	expression.Consequence = p.parseBlockStatement()
+
+	if p.peekTokenIs(ELSE) {
+		p.nextToken()
+		if !p.expectPeek(LBRACE) {
+			return nil
+		}
+		expression.Alternative = p.parseBlockStatement()
+	}
+
+	return expression
+}
+
+func (p *Parser) parseBlockStatement() *BlockStatement {
+	block := &BlockStatement{Token: p.curToken}
+	block.Statements = []Statement{}
+	p.nextToken()
+	for !p.curTokenIs(RBRACE) && !p.curTokenIs(EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.nextToken()
+	}
+	return block
 }
 
 func (p *Parser) parsePrefixExpression() Expression {
