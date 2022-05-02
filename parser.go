@@ -111,15 +111,19 @@ func (p *Parser) parseStatement() Statement {
 
 func (p *Parser) parseLetStatement() *LetStatement {
 	stmt := &LetStatement{Token: p.curToken}
+
 	if !p.expectPeek(IDENT) {
 		return nil
 	}
+
 	stmt.Name = &Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
 	if !p.expectPeek(ASSIGN) {
 		return nil
 	}
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
 
-	// TODO: We're skipping the expressions until we // encounter a semicolon
 	for !p.curTokenIs(SEMICOLON) {
 		p.nextToken()
 	}
@@ -127,12 +131,11 @@ func (p *Parser) parseLetStatement() *LetStatement {
 }
 
 func (p *Parser) parseReturnStatement() *ReturnStatement {
-	// TODO: could double check curToken == return
-	//       as is, relies on case statemenet to be correct in caller func
-
 	stmt := &ReturnStatement{Token: p.curToken}
 	p.nextToken()
-	// TODO: We're skipping the expressions until we // encounter a semicolon
+
+	stmt.ReturnValue = p.parseExpression(LOWEST)
+
 	for !p.curTokenIs(SEMICOLON) {
 		p.nextToken()
 	}
