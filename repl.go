@@ -8,18 +8,28 @@ import (
 
 const PROMPT = ">> "
 
-func StartRepl(in io.Reader, out io.Writer) {
+func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	for {
-		_, _ = fmt.Fprintf(out, PROMPT)
+		fmt.Fprintf(out, PROMPT)
 		scanned := scanner.Scan()
 		if !scanned {
 			return
 		}
 		line := scanner.Text()
 		l := NewLexer(line)
-		for tok := l.NextToken(); tok.Type != EOF; tok = l.NextToken() {
-			_, _ = fmt.Fprintf(out, "%+v\n", tok)
+		p := NewParser(l)
+		program := p.ParseProgram()
+		if len(p.errors) != 0 {
+			printParserErrors(out, p.errors)
+			continue
 		}
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
+	}
+}
+func printParserErrors(out io.Writer, errors []string) {
+	for _, msg := range errors {
+		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
