@@ -22,12 +22,12 @@ type Integer struct {
 func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 
-type Boolean struct {
+type BooleanObject struct {
 	Value bool
 }
 
-func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
-func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
+func (b *BooleanObject) Type() ObjectType { return BOOLEAN_OBJ }
+func (b *BooleanObject) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
 
 type Null struct{}
 

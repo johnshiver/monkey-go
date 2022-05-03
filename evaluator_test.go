@@ -18,6 +18,29 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
+func TestEvalBooleanExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"true", true},
+		{"false", false},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testBooleanObject(t, evaluated, tt.expected)
+	}
+}
+func testBooleanObject(t *testing.T, obj Object, expected bool) bool {
+	result, ok := obj.(*BooleanObject)
+	if !ok {
+		t.Errorf("object is not BooleanObject. got=%T (%+v)", obj, obj)
+		return false
+	}
+	require.Equal(t, result.Value, expected)
+	return true
+}
+
 func testEval(input string) Object {
 	l := NewLexer(input)
 	p := NewParser(l)

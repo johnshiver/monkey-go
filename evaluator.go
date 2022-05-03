@@ -1,5 +1,10 @@
 package monkey_interpreter
 
+var (
+	FALSE_OBJ = &BooleanObject{Value: false}
+	TRUE_OBJ  = &BooleanObject{Value: true}
+)
+
 func Eval(node Node) Object {
 	switch node := node.(type) {
 	// Statements
@@ -10,6 +15,11 @@ func Eval(node Node) Object {
 		// Expressions
 	case *IntegerLiteral:
 		return &Integer{Value: node.Value}
+	case *BooleanLiteral:
+		if node.Value {
+			return TRUE_OBJ
+		}
+		return FALSE_OBJ
 	}
 	return nil
 }
