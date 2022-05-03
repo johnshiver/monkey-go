@@ -17,10 +17,7 @@ func Eval(node Node) Object {
 	case *IntegerLiteral:
 		return &Integer{Value: node.Value}
 	case *BooleanLiteral:
-		if node.Value {
-			return TRUE_OBJ
-		}
-		return FALSE_OBJ
+		return nativeBoolToBooleanObject(node.Value)
 	case *PrefixExpression:
 		right := Eval(node.Right)
 		return evalPrefixExpression(node.Operator, right)
@@ -93,7 +90,22 @@ func evalIntegerInfixExpression(operator string, left, right Object) Object {
 		return &Integer{Value: leftVal * rightVal}
 	case "/":
 		return &Integer{Value: leftVal / rightVal}
+	case "<":
+		return nativeBoolToBooleanObject(leftVal < rightVal)
+	case ">":
+		return nativeBoolToBooleanObject(leftVal > rightVal)
+	case "==":
+		return nativeBoolToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
 		return NULL_OBJ
 	}
+}
+
+func nativeBoolToBooleanObject(input bool) *BooleanObject {
+	if input {
+		return TRUE_OBJ
+	}
+	return FALSE_OBJ
 }
