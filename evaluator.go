@@ -13,7 +13,12 @@ func Eval(node Node) Object {
 		return evalStatements(node.Statements)
 	case *ExpressionStatement:
 		return Eval(node.Expression)
-		// Expressions
+	case *BlockStatement:
+		return evalStatements(node.Statements)
+	case *IfExpression:
+		return evalIfExpression(node)
+
+	// Expressions
 	case *IntegerLiteral:
 		return &Integer{Value: node.Value}
 	case *BooleanLiteral:
@@ -73,6 +78,10 @@ func evalInfixExpression(operator string, left, right Object) Object {
 	switch {
 	case left.Type() == INT_OBJ_TYPE && right.Type() == INT_OBJ_TYPE:
 		return evalIntegerInfixExpression(operator, left, right)
+	case operator == "==":
+		return nativeBoolToBooleanObject(left == right)
+	case operator == "!=":
+		return nativeBoolToBooleanObject(left != right)
 	default:
 		return NULL_OBJ
 	}
@@ -108,4 +117,27 @@ func nativeBoolToBooleanObject(input bool) *BooleanObject {
 		return TRUE_OBJ
 	}
 	return FALSE_OBJ
+}
+
+func evalIfExpression(ie *IfExpression) Object {
+	condition := Eval(ie.Condition)
+	if isTruthy(condition) {
+		return Eval(ie.Consequence)
+	} else if ie.Alternative != nil {
+		return Eval(ie.Alternative)
+	} else {
+		return NULL_OBJ
+	}
+}
+func isTruthy(obj Object) bool {
+	switch obj {
+	case NULL_OBJ:
+		return false
+	case TRUE_OBJ:
+		return true
+	case FALSE_OBJ:
+		return false
+	default:
+		return true
+	}
 }

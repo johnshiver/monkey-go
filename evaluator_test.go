@@ -50,10 +50,21 @@ func TestEvalBooleanExpression(t *testing.T) {
 		{"1 != 1", false},
 		{"1 == 2", false},
 		{"1 != 2", true},
+		{"true == true", true},
+		{"false == false", true},
+		{"true == false", false},
+		{"true != false", true},
+		{"false != true", true},
+		{"(1 < 2) == true", true},
+		{"(1 < 2) == false", false},
+		{"(1 > 2) == true", false},
+		{"(1 > 2) == false", true},
 	}
-	for _, tt := range tests {
-		evaluated := testEval(tt.input)
-		testBooleanObject(t, evaluated, tt.expected)
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case: %d", i), func(t *testing.T) {
+			evaluated := testEval(tt.input)
+			testBooleanObject(t, evaluated, tt.expected)
+		})
 	}
 }
 func TestBangOperator(t *testing.T) {
@@ -71,6 +82,31 @@ func TestBangOperator(t *testing.T) {
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
 		testBooleanObject(t, evaluated, tt.expected)
+	}
+}
+func TestIfElseExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"if (true) { 10 }", 10},
+		{"if (false) { 10 }", nil},
+		{"if (1) { 10 }", 10},
+		{"if (1 < 2) { 10 }", 10},
+		{"if (1 > 2) { 10 }", nil},
+		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 < 2) { 10 } else { 20 }", 10},
+	}
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			evaluated := testEval(tt.input)
+			integer, ok := tt.expected.(int)
+			if ok {
+				testIntegerObject(t, evaluated, int64(integer))
+			} else {
+				testNullObject(t, evaluated)
+			}
+		})
 	}
 }
 
@@ -101,4 +137,8 @@ func testIntegerObject(t *testing.T, obj Object, expected int64) bool {
 	}
 	require.Equal(t, result.Value, expected)
 	return true
+}
+
+func testNullObject(t *testing.T, obj Object) {
+	require.Equal(t, NULL_OBJ, obj)
 }
