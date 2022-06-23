@@ -10,13 +10,16 @@ func Eval(node Node) Object {
 	switch node := node.(type) {
 	// Statements
 	case *Program:
-		return evalStatements(node.Statements)
+		return evalProgram(node)
 	case *ExpressionStatement:
 		return Eval(node.Expression)
 	case *BlockStatement:
-		return evalStatements(node.Statements)
+		return evalBlockStatement(node)
 	case *IfExpression:
 		return evalIfExpression(node)
+	case *ReturnStatement:
+		val := Eval(node.ReturnValue)
+		return &ReturnValue{Value: val}
 
 	// Expressions
 	case *IntegerLiteral:
@@ -34,10 +37,14 @@ func Eval(node Node) Object {
 	return nil
 }
 
-func evalStatements(stmts []Statement) Object {
+func evalProgram(program *Program) Object {
 	var result Object
-	for _, statement := range stmts {
+	for _, statement := range program.Statements {
 		result = Eval(statement)
+		// if we're at return statement, short circuit return the value
+		if returnVal, ok := result.(*ReturnValue); ok {
+			return returnVal.Value
+		}
 	}
 	return result
 }
@@ -140,4 +147,15 @@ func isTruthy(obj Object) bool {
 	default:
 		return true
 	}
+}
+
+func evalBlockStatement(block *BlockStatement) Object {
+	var result Object
+	for _, statement := range block.Statements {
+		result = Eval(statement)
+		if result != nil && result.Type() == RETURN_VALUE_OBJ_TYPE {
+			return result
+		}
+	}
+	return result
 }
