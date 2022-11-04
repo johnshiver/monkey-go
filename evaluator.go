@@ -1,6 +1,8 @@
 package monkey_interpreter
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var (
 	NULL_OBJ  = &Null{}
@@ -47,6 +49,24 @@ func Eval(node Node, env *Environment) Object {
 		left := Eval(currNode.Left, env)
 		right := Eval(currNode.Right, env)
 		return evalInfixExpression(currNode.Operator, left, right)
+	case *FunctionLiteral:
+		params := currNode.Parameters
+		body := currNode.Body
+		return &Function{
+			Parameters: params,
+			Body:       body,
+			Env:        env,
+		}
+	case *CallExpression:
+		function := Eval(currNode.Function, env)
+		if isError(function) {
+			return function
+		}
+		args := evalExpressions(currNode.Arguments, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+
 	}
 	return nil
 }
@@ -187,6 +207,20 @@ func evalIdentifier(node *Identifier, env *Environment) Object {
 		return newError("identifier not found: %s", node.Value)
 	}
 	return val
+}
+
+func evalExpressions(
+	exps []Expression, env *Environment,
+) []Object {
+	var result []Object
+	for _, e := range exps {
+		evaluated := Eval(e, env)
+		if isError(evaluated) {
+			return []Object{evaluated}
+		}
+		result = append(result, evaluated)
+	}
+	return result
 }
 
 func newError(format string, a ...interface{}) *Error {

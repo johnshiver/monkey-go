@@ -209,6 +209,38 @@ func TestEvaluateLetStatements(t *testing.T) {
 	}
 }
 
+func TestFunctionObject(t *testing.T) {
+	input := "fn(x) { x + 2; };"
+	evaluated := testEval(input)
+	fn, ok := evaluated.(*Function)
+	if !ok {
+		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
+	}
+	require.Len(t, fn.Parameters, 1)
+	require.Equal(t, "x", fn.Parameters[0].String())
+	require.Equal(t, "(x + 2)", fn.Body.String())
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int64
+	}{
+		{"simple", "let identity = fn(x) { x; }; identity(5);", 5},
+		{"simple 2", "let identity = fn(x) { return x; }; identity(5);", 5},
+		{"func with expression", "let double = fn(x) { x * 2; }; double(5);", 10},
+		{"multi parameters", "let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+		{"function as parameters", "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"call func immediately", "fn(x) { x; }(5)", 5},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testIntegerObject(t, testEval(tt.input), tt.expected)
+		})
+	}
+}
+
 // helper functions ----------------------------------------------------------
 
 func testBooleanObject(t *testing.T, obj Object, expected bool) bool {
