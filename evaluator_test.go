@@ -148,29 +148,34 @@ func TestErrorHandling(t *testing.T) {
 			"type mismatch: INTEGER + BOOLEAN",
 		},
 		{
-			"int bool addition",
+			"int bool addition 2",
 			"5 + true; 5;",
 			"type mismatch: INTEGER + BOOLEAN",
 		},
 		{
-			"int bool addition",
+			"negative boolean",
 			"-true",
 			"unknown operator: -BOOLEAN",
 		},
 		{
-			"int bool addition",
+			"bool addition",
 			"true + false;",
 			"unknown operator: BOOLEAN + BOOLEAN",
 		},
 		{
-			"int bool addition",
+			"bool addition 2",
 			"5; true + false; 5",
 			"unknown operator: BOOLEAN + BOOLEAN",
 		},
 		{
-			"int bool addition",
+			"bool addition 3",
 			"if (10 > 1) { true + false; }",
 			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"unbound identifier",
+			"foobar",
+			"identifier not found: foobar",
 		},
 	}
 	for _, tt := range tests {
@@ -186,6 +191,21 @@ func TestErrorHandling(t *testing.T) {
 					tt.expectedMessage, errObj.Message)
 			}
 		})
+	}
+}
+
+func TestEvaluateLetStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 5; a;", 5},
+		{"let a = 5 * 5; a;", 25},
+		{"let a = 5; let b = a; b;", 5},
+		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+	}
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
 
@@ -205,7 +225,8 @@ func testEval(input string) Object {
 	l := NewLexer(input)
 	p := NewParser(l)
 	program := p.ParseProgram()
-	return Eval(program)
+	env := NewEnvironment()
+	return Eval(program, env)
 }
 
 func testIntegerObject(t *testing.T, obj Object, expected int64) bool {

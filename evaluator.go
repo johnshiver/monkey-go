@@ -8,41 +8,53 @@ var (
 	TRUE_OBJ  = &BooleanObject{Value: true}
 )
 
-func Eval(node Node) Object {
-	switch node := node.(type) {
+func Eval(node Node, env *Environment) Object {
+	switch currNode := node.(type) {
 	// Statements
 	case *Program:
-		return evalProgram(node)
+		return evalProgram(currNode, env)
 	case *ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(currNode.Expression, env)
 	case *BlockStatement:
-		return evalBlockStatement(node)
+		return evalBlockStatement(currNode, env)
 	case *IfExpression:
-		return evalIfExpression(node)
+		return evalIfExpression(currNode, env)
 	case *ReturnStatement:
-		val := Eval(node.ReturnValue)
+		val := Eval(currNode.ReturnValue, env)
 		return &ReturnValue{Value: val}
+	case *LetStatement:
+		// evaluate let expression
+		val := Eval(currNode.Value, env)
+
+		// if there is an error evaluating expression, return the error
+		if isError(val) {
+			return val
+		}
+		env.Set(currNode.Name.Value, val)
+
+	case *Identifier:
+		return evalIdentifier(currNode, env)
 
 	// Expressions
 	case *IntegerLiteral:
-		return &Integer{Value: node.Value}
+		return &Integer{Value: currNode.Value}
 	case *BooleanLiteral:
-		return nativeBoolToBooleanObject(node.Value)
+		return nativeBoolToBooleanObject(currNode.Value)
 	case *PrefixExpression:
-		right := Eval(node.Right)
-		return evalPrefixExpression(node.Operator, right)
+		right := Eval(currNode.Right, env)
+		return evalPrefixExpression(currNode.Operator, right)
 	case *InfixExpression:
-		left := Eval(node.Left)
-		right := Eval(node.Right)
-		return evalInfixExpression(node.Operator, left, right)
+		left := Eval(currNode.Left, env)
+		right := Eval(currNode.Right, env)
+		return evalInfixExpression(currNode.Operator, left, right)
 	}
 	return nil
 }
 
-func evalProgram(program *Program) Object {
+func evalProgram(program *Program, env *Environment) Object {
 	var result Object
 	for _, statement := range program.Statements {
-		result = Eval(statement)
+		result = Eval(statement, env)
 		switch resultType := result.(type) {
 		case *ReturnValue:
 			return resultType.Value
@@ -132,12 +144,12 @@ func nativeBoolToBooleanObject(input bool) *BooleanObject {
 	return FALSE_OBJ
 }
 
-func evalIfExpression(ie *IfExpression) Object {
-	condition := Eval(ie.Condition)
+func evalIfExpression(ie *IfExpression, env *Environment) Object {
+	condition := Eval(ie.Condition, env)
 	if isTruthy(condition) {
-		return Eval(ie.Consequence)
+		return Eval(ie.Consequence, env)
 	} else if ie.Alternative != nil {
-		return Eval(ie.Alternative)
+		return Eval(ie.Alternative, env)
 	} else {
 		return NULL_OBJ
 	}
@@ -155,10 +167,10 @@ func isTruthy(obj Object) bool {
 	}
 }
 
-func evalBlockStatement(block *BlockStatement) Object {
+func evalBlockStatement(block *BlockStatement, env *Environment) Object {
 	var result Object
 	for _, statement := range block.Statements {
-		result = Eval(statement)
+		result = Eval(statement, env)
 		if result != nil {
 			rt := result.Type()
 			if rt == RETURN_VALUE_OBJ_TYPE || rt == ERROR_OBJ_TYPE {
@@ -169,6 +181,18 @@ func evalBlockStatement(block *BlockStatement) Object {
 	return result
 }
 
+func evalIdentifier(node *Identifier, env *Environment) Object {
+	val, ok := env.Get(node.Value)
+	if !ok {
+		return newError("identifier not found: %s", node.Value)
+	}
+	return val
+}
+
 func newError(format string, a ...interface{}) *Error {
 	return &Error{Message: fmt.Sprintf(format, a...)}
+}
+
+func isError(obj Object) bool {
+	return obj.Type() == ERROR_OBJ_TYPE
 }

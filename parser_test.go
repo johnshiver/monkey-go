@@ -2,11 +2,12 @@ package monkey_interpreter
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestLetStatements(t *testing.T) {
+func TestParseLetStatements(t *testing.T) {
 	tests := []struct {
 		input              string
 		expectedIdentifier string
