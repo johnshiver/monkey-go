@@ -2,8 +2,9 @@ package monkey_interpreter
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestEvalIntegerExpression(t *testing.T) {
@@ -131,6 +132,59 @@ func TestParseReturnStatements(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			evaluated := testEval(tt.input)
 			testIntegerObject(t, evaluated, tt.expected)
+		})
+	}
+}
+
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		name            string
+		input           string
+		expectedMessage string
+	}{
+		{
+			"int bool addition",
+			"5 + true;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"int bool addition",
+			"5 + true; 5;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"int bool addition",
+			"-true",
+			"unknown operator: -BOOLEAN",
+		},
+		{
+			"int bool addition",
+			"true + false;",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"int bool addition",
+			"5; true + false; 5",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"int bool addition",
+			"if (10 > 1) { true + false; }",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evaluated := testEval(tt.input)
+			errObj, ok := evaluated.(*Error)
+			if !ok {
+				t.Errorf("no error object returned. got=%T(%+v)", evaluated, evaluated)
+				return
+			}
+			if errObj.Message != tt.expectedMessage {
+				t.Errorf("wrong error message. expected=%q, got=%q",
+					tt.expectedMessage, errObj.Message)
+			}
 		})
 	}
 }

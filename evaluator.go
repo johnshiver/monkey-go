@@ -1,5 +1,7 @@
 package monkey_interpreter
 
+import "fmt"
+
 var (
 	NULL_OBJ  = &Null{}
 	FALSE_OBJ = &BooleanObject{Value: false}
@@ -41,9 +43,11 @@ func evalProgram(program *Program) Object {
 	var result Object
 	for _, statement := range program.Statements {
 		result = Eval(statement)
-		// if we're at return statement, short circuit return the value
-		if returnVal, ok := result.(*ReturnValue); ok {
-			return returnVal.Value
+		switch resultType := result.(type) {
+		case *ReturnValue:
+			return resultType.Value
+		case *Error:
+			return resultType
 		}
 	}
 	return result
@@ -56,7 +60,7 @@ func evalPrefixExpression(operator string, right Object) Object {
 	case "-":
 		return evalMinusPrefixOperatorExpression(right)
 	default:
-		return NULL_OBJ
+		return newError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
@@ -75,7 +79,7 @@ func evalBangOperatorExpression(right Object) Object {
 
 func evalMinusPrefixOperatorExpression(right Object) Object {
 	if right.Type() != INT_OBJ_TYPE {
-		return NULL_OBJ
+		return newError("unknown operator: -%s", right.Type())
 	}
 	value := right.(*Integer).Value
 	return &Integer{Value: -value}
@@ -89,8 +93,10 @@ func evalInfixExpression(operator string, left, right Object) Object {
 		return nativeBoolToBooleanObject(left == right)
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
+	case left.Type() != right.Type():
+		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	default:
-		return NULL_OBJ
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -115,7 +121,7 @@ func evalIntegerInfixExpression(operator string, left, right Object) Object {
 	case "!=":
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
-		return NULL_OBJ
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -153,9 +159,16 @@ func evalBlockStatement(block *BlockStatement) Object {
 	var result Object
 	for _, statement := range block.Statements {
 		result = Eval(statement)
-		if result != nil && result.Type() == RETURN_VALUE_OBJ_TYPE {
-			return result
+		if result != nil {
+			rt := result.Type()
+			if rt == RETURN_VALUE_OBJ_TYPE || rt == ERROR_OBJ_TYPE {
+				return result
+			}
 		}
 	}
 	return result
+}
+
+func newError(format string, a ...interface{}) *Error {
+	return &Error{Message: fmt.Sprintf(format, a...)}
 }
