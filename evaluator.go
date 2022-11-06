@@ -66,7 +66,6 @@ func Eval(node Node, env *Environment) Object {
 		if len(args) == 1 && isError(args[0]) {
 			return args[0]
 		}
-
 	}
 	return nil
 }
