@@ -62,10 +62,14 @@ func Eval(node Node, env *Environment) Object {
 		if isError(function) {
 			return function
 		}
+
 		args := evalExpressions(currNode.Arguments, env)
+		// if there is an error on the previous call, this is how to check for it
+		// TODO: im not a huge fan of this design, lets revisi
 		if len(args) == 1 && isError(args[0]) {
 			return args[0]
 		}
+		return applyFunction(function, args)
 	}
 	return nil
 }
@@ -220,6 +224,31 @@ func evalExpressions(
 		result = append(result, evaluated)
 	}
 	return result
+}
+
+func applyFunction(fn Object, args []Object) Object {
+	function, ok := fn.(*Function)
+	if !ok {
+		return newError("not a function: %s", fn.Type())
+	}
+	extendedEnv := extendFunctionEnv(function, args)
+	evaluated := Eval(function.Body, extendedEnv)
+	return unwrapReturnValue(evaluated)
+}
+
+func extendFunctionEnv(fn *Function, args []Object) *Environment {
+	env := NewEnclosedEnvironment(fn.Env)
+	for paramIdx, param := range fn.Parameters {
+		env.Set(param.Value, args[paramIdx])
+	}
+	return env
+}
+
+func unwrapReturnValue(obj Object) Object {
+	if returnValue, ok := obj.(*ReturnValue); ok {
+		return returnValue.Value
+	}
+	return obj
 }
 
 func newError(format string, a ...interface{}) *Error {
