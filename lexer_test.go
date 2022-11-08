@@ -23,6 +23,8 @@ func TestNextToken(t *testing.T) {
 	}
     10 == 10;
     10 != 9;
+   "foobar"
+   "foo bar"
 `
 	// TODO: could replace anonymous struct with Token
 	expectedTokens := []struct {
@@ -110,6 +112,9 @@ func TestNextToken(t *testing.T) {
 		{NOT_EQ, "!="},
 		{INT, "9"},
 		{SEMICOLON, ";"},
+
+		{STRING, "foobar"},
+		{STRING, "foo bar"},
 
 		{EOF, ""},
 	}

@@ -24,6 +24,19 @@ func (l *Lexer) readChar() {
 	l.readPosition += 1
 }
 
+// readString reads in a string
+func (l *Lexer) readString() string {
+	position := l.position + 1
+	for {
+		// read characters until the end
+		l.readChar()
+		if l.ch == '"' || l.ch == 0 {
+			break
+		}
+	}
+	return l.input[position:l.position]
+}
+
 // peekChar is like readChar, but doesnt increment reader
 func (l *Lexer) peekChar() byte {
 	if l.readPosition >= len(l.input) {
@@ -66,6 +79,9 @@ func (l *Lexer) NextToken() Token {
 	var tok Token
 	l.skipWhitespace()
 	switch l.ch {
+	case '"':
+		tok.Type = STRING
+		tok.Literal = l.readString()
 	case ';':
 		tok = newToken(SEMICOLON, l.ch)
 	case '(':
