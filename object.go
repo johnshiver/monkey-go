@@ -10,6 +10,7 @@ type ObjectType string
 
 const (
 	INT_OBJ_TYPE          = "INTEGER"
+	STRING_OBJ_TYPE       = "STRING"
 	BOOL_OBJ_TYPE         = "BOOLEAN"
 	NULL_OBJ_TYPE         = "NULL"
 	RETURN_VALUE_OBJ_TYPE = "RETURN_VALUE"
@@ -28,6 +29,13 @@ type Integer struct {
 
 func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) Type() ObjectType { return INT_OBJ_TYPE }
+
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ObjectType { return STRING_OBJ_TYPE }
+func (s *String) Inspect() string  { return s.Value }
 
 type BooleanObject struct {
 	Value bool

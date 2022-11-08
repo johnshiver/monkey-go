@@ -40,6 +40,8 @@ func Eval(node Node, env *Environment) Object {
 	// Expressions
 	case *IntegerLiteral:
 		return &Integer{Value: currNode.Value}
+	case *StringLiteral:
+		return &String{Value: currNode.Value}
 	case *BooleanLiteral:
 		return nativeBoolToBooleanObject(currNode.Value)
 	case *PrefixExpression:
