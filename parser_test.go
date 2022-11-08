@@ -480,6 +480,20 @@ func TestCallExpressionParsing(t *testing.T) {
 	testInfixExpression(t, exp.Arguments[2], 4, "+", 5)
 }
 
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"hello world";`
+	l := NewLexer(input)
+	p := NewParser(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	stmt := program.Statements[0].(*ExpressionStatement)
+	literal, ok := stmt.Expression.(*StringLiteral)
+	if !ok {
+		t.Fatalf("exp not *ast.StringLiteral. got=%T", stmt.Expression)
+	}
+	require.Equal(t, "hello world", literal.Value)
+}
+
 // test function helpers -------------------------------------------------------------------------------------------
 
 func testIntegerLiteral(t *testing.T, il Expression, value int64) bool {
