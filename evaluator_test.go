@@ -277,6 +277,35 @@ func TestStringConcatenation(t *testing.T) {
 	require.Equal(t, "Hello World!", str.Value)
 }
 
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected interface{}
+	}{
+		{"len of empty string", `len("")`, 0},
+		{"len of non empty string", `len("four")`, 4},
+		{"len of string with empty space", `len("hello world")`, 11},
+		{"unsupported arg type", `len(1)`, "argument to `len` not supported, got INTEGER"},
+		{"wrong number of arguments", `len("one", "two")`, "wrong number of arguments. got=2, want=1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evaluated := testEval(tt.input)
+			switch expected := tt.expected.(type) {
+			case int:
+				testIntegerObject(t, evaluated, int64(expected))
+			case string:
+				errObj, ok := evaluated.(*Error)
+				if !ok {
+					t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
+				}
+				require.Equal(t, expected, errObj.Message)
+			}
+		})
+	}
+}
+
 // helper functions ----------------------------------------------------------
 
 func testBooleanObject(t *testing.T, obj Object, expected bool) bool {
