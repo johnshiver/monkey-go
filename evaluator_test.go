@@ -177,6 +177,11 @@ func TestErrorHandling(t *testing.T) {
 			"foobar",
 			"identifier not found: foobar",
 		},
+		{
+			"subtract strings",
+			`"Hello" - "World"`,
+			"unknown operator: STRING - STRING",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -254,6 +259,16 @@ func TestClosures(t *testing.T) {
 
 func TestStringLiteral(t *testing.T) {
 	input := `"Hello World!"`
+	evaluated := testEval(input)
+	str, ok := evaluated.(*String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+	}
+	require.Equal(t, "Hello World!", str.Value)
+}
+
+func TestStringConcatenation(t *testing.T) {
+	input := `"Hello" + " " + "World!"`
 	evaluated := testEval(input)
 	str, ok := evaluated.(*String)
 	if !ok {

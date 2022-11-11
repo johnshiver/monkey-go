@@ -132,12 +132,23 @@ func evalInfixExpression(operator string, left, right Object) Object {
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+	case left.Type() == STRING_OBJ_TYPE && right.Type() == STRING_OBJ_TYPE:
+		return evalIntegerInfixExpression(operator, left, right)
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
 func evalIntegerInfixExpression(operator string, left, right Object) Object {
+	if operator != "+" {
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
+	leftVal := left.(*String).Value
+	rightVal := right.(*String).Value
+	return &String{Value: leftVal + rightVal}
+}
+
+func evalStringInfixExpression(operator string, left, right Object) Object {
 	leftVal := left.(*Integer).Value
 	rightVal := right.(*Integer).Value
 	switch operator {
