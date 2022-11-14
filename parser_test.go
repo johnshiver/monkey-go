@@ -494,6 +494,28 @@ func TestStringLiteralExpression(t *testing.T) {
 	require.Equal(t, "hello world", literal.Value)
 }
 
+func TestParsingArrayLiterals(t *testing.T) {
+	input := "[1, 2 * 2, 3 + 3]"
+	l := NewLexer(input)
+	p := NewParser(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	stmt, ok := program.Statements[0].(*ExpressionStatement)
+	if !ok {
+		t.Fatalf("statement not ExpressionStatement. got=%T", stmt.Expression)
+	}
+	array, ok := stmt.Expression.(*ArrayLiteral)
+	if !ok {
+		t.Fatalf("exp not ast.ArrayLiteral. got=%T", stmt.Expression)
+	}
+	if len(array.Elements) != 3 {
+		t.Fatalf("len(array.Elements) not 3. got=%d", len(array.Elements))
+	}
+	testIntegerLiteral(t, array.Elements[0], 1)
+	testInfixExpression(t, array.Elements[1], 2, "*", 2)
+	testInfixExpression(t, array.Elements[2], 3, "+", 3)
+}
+
 // test function helpers -------------------------------------------------------------------------------------------
 
 func testIntegerLiteral(t *testing.T, il Expression, value int64) bool {

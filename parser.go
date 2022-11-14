@@ -59,6 +59,7 @@ func NewParser(l *Lexer) *Parser {
 	p.registerPrefix(LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(IF, p.parseIfExpression)
 	p.registerPrefix(FUNCTION, p.parseFunctionLiteral)
+	p.registerPrefix(LBRACKET, p.parseArrayLiteral)
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
 	p.registerInfix(PLUS, p.parseInfixExpression)
@@ -268,6 +269,33 @@ func (p *Parser) parseFunctionLiteral() Expression {
 	return lit
 }
 
+func (p *Parser) parseArrayLiteral() Expression {
+	array := ArrayLiteral{
+		Token: p.curToken,
+	}
+	array.Elements = p.parseExpressionList(RBRACKET)
+	return &array
+}
+
+func (p *Parser) parseExpressionList(end TokenType) []Expression {
+	var list []Expression
+	if p.peekTokenIs(end) {
+		p.nextToken()
+		return list
+	}
+	p.nextToken()
+	list = append(list, p.parseExpression(LOWEST))
+	for p.peekTokenIs(COMMA) {
+		p.nextToken()
+		p.nextToken()
+		list = append(list, p.parseExpression(LOWEST))
+	}
+	if !p.expectPeek(end) {
+		return nil
+	}
+	return list
+}
+
 func (p *Parser) parseFunctionParameters() []*Identifier {
 	var identifiers []*Identifier
 	if p.peekTokenIs(RPAREN) {
@@ -291,26 +319,8 @@ func (p *Parser) parseFunctionParameters() []*Identifier {
 
 func (p *Parser) parseCallExpression(function Expression) Expression {
 	exp := &CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(RPAREN)
 	return exp
-}
-func (p *Parser) parseCallArguments() []Expression {
-	var args []Expression
-	if p.peekTokenIs(RPAREN) {
-		p.nextToken()
-		return args
-	}
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-	for p.peekTokenIs(COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
-	}
-	if !p.expectPeek(RPAREN) {
-		return nil
-	}
-	return args
 }
 
 func (p *Parser) parsePrefixExpression() Expression {
