@@ -44,6 +44,12 @@ func Eval(node Node, env *Environment) Object {
 		return &String{Value: currNode.Value}
 	case *BooleanLiteral:
 		return nativeBoolToBooleanObject(currNode.Value)
+	case *ArrayLiteral:
+		elements := evalExpressions(currNode.Elements, env)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+		return &Array{Elements: elements}
 	case *PrefixExpression:
 		right := Eval(currNode.Right, env)
 		return evalPrefixExpression(currNode.Operator, right)
@@ -72,6 +78,16 @@ func Eval(node Node, env *Environment) Object {
 			return args[0]
 		}
 		return applyFunction(function, args)
+	case *IndexExpression:
+		left := Eval(currNode.Left, env)
+		if isError(left) {
+			return left
+		}
+		index := Eval(currNode.Index, env)
+		if isError(index) {
+			return index
+		}
+		return evalIndexExpression(left, index)
 	}
 	return nil
 }
@@ -171,6 +187,25 @@ func evalIntegerInfixExpression(operator string, left, right Object) Object {
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
+}
+
+func evalIndexExpression(left, index Object) Object {
+	switch {
+	case left.Type() == ARRY_OBJ_TYPE && index.Type() == INT_OBJ_TYPE:
+		return evalArrayIndexExpression(left, index)
+	default:
+		return newError("index operator not supported: %s", left.Type())
+	}
+}
+
+func evalArrayIndexExpression(array, index Object) Object {
+	arrayObject := array.(*Array)
+	idx := index.(*Integer).Value
+	max := int64(len(arrayObject.Elements) - 1)
+	if idx < 0 || idx > max {
+		return NULL_OBJ
+	}
+	return arrayObject.Elements[idx]
 }
 
 func nativeBoolToBooleanObject(input bool) *BooleanObject {
