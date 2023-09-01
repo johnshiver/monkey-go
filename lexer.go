@@ -84,6 +84,8 @@ func (l *Lexer) NextToken() Token {
 		tok.Literal = l.readString()
 	case ';':
 		tok = newToken(SEMICOLON, l.ch)
+	case ':':
+		tok = newToken(COLON, l.ch)
 	case '(':
 		tok = newToken(LPAREN, l.ch)
 	case ')':
