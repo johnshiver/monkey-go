@@ -18,7 +18,8 @@ const (
 	ERROR_OBJ_TYPE        = "ERROR"
 	FUNCTION_OBJ_TYPE     = "FUNCTION"
 	BULTIN_OBJ_TYPE       = "BUILTIN"
-	ARRY_OBJ_TYPE         = "ARRAY"
+	ARRAY_OBJ_TYPE        = "ARRAY"
+	HASH_OBJ_TYPE         = "HASH"
 )
 
 type Object interface {
@@ -105,7 +106,7 @@ type Array struct {
 	Elements []Object
 }
 
-func (ao *Array) Type() ObjectType { return ARRY_OBJ_TYPE }
+func (ao *Array) Type() ObjectType { return ARRAY_OBJ_TYPE }
 
 func (ao *Array) Inspect() string {
 	var out bytes.Buffer
@@ -140,4 +141,31 @@ func (s *String) HashKey() HashKey {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(s.Value))
 	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() ObjectType { return HASH_OBJ_TYPE }
+
+func (h *Hash) Inspect() string {
+	var out bytes.Buffer
+	var pairs []string
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s",
+			pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+	return out.String()
+}
+
+type Hashable interface {
+	HashKey() HashKey
 }

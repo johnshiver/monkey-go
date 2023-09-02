@@ -27,13 +27,11 @@ func Eval(node Node, env *Environment) Object {
 	case *LetStatement:
 		// evaluate let expression
 		val := Eval(currNode.Value, env)
-
 		// if there is an error evaluating expression, return the error
 		if isError(val) {
 			return val
 		}
 		env.Set(currNode.Name.Value, val)
-
 	case *Identifier:
 		return evalIdentifier(currNode, env)
 
@@ -50,6 +48,8 @@ func Eval(node Node, env *Environment) Object {
 			return elements[0]
 		}
 		return &Array{Elements: elements}
+	case *HashLiteral:
+		return evalHashLiteral(currNode, env)
 	case *PrefixExpression:
 		right := Eval(currNode.Right, env)
 		return evalPrefixExpression(currNode.Operator, right)
@@ -191,7 +191,7 @@ func evalIntegerInfixExpression(operator string, left, right Object) Object {
 
 func evalIndexExpression(left, index Object) Object {
 	switch {
-	case left.Type() == ARRY_OBJ_TYPE && index.Type() == INT_OBJ_TYPE:
+	case left.Type() == ARRAY_OBJ_TYPE && index.Type() == INT_OBJ_TYPE:
 		return evalArrayIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
@@ -206,6 +206,31 @@ func evalArrayIndexExpression(array, index Object) Object {
 		return NULL_OBJ
 	}
 	return arrayObject.Elements[idx]
+}
+
+func evalHashLiteral(
+	node *HashLiteral, env *Environment,
+) Object {
+
+	pairs := make(map[HashKey]HashPair)
+	for keyNode, valueNode := range node.Pairs {
+		key := Eval(keyNode, env)
+		if isError(key) {
+			return key
+		}
+		hashKey, ok := key.(Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", key.Type())
+		}
+		value := Eval(valueNode, env)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.HashKey()
+		pairs[hashed] = HashPair{Key: key, Value: value}
+	}
+	return &Hash{Pairs: pairs}
 }
 
 func nativeBoolToBooleanObject(input bool) *BooleanObject {
