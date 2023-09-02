@@ -193,6 +193,8 @@ func evalIndexExpression(left, index Object) Object {
 	switch {
 	case left.Type() == ARRAY_OBJ_TYPE && index.Type() == INT_OBJ_TYPE:
 		return evalArrayIndexExpression(left, index)
+	case left.Type() == HASH_OBJ_TYPE:
+		return evalHashIndexExpression(left, index)
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
@@ -206,6 +208,19 @@ func evalArrayIndexExpression(array, index Object) Object {
 		return NULL_OBJ
 	}
 	return arrayObject.Elements[idx]
+}
+
+func evalHashIndexExpression(hash, index Object) Object {
+	hashObject := hash.(*Hash)
+	key, ok := index.(Hashable)
+	if !ok {
+		return newError("unusable as hash key: %s", index.Type())
+	}
+	pair, ok := hashObject.Pairs[key.HashKey()]
+	if !ok {
+		return NULL_OBJ
+	}
+	return pair.Value
 }
 
 func evalHashLiteral(
