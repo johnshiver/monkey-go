@@ -1,5 +1,7 @@
 package monkey_interpreter
 
+import "fmt"
+
 var builtins = map[string]*Builtin{
 	"len": {
 		Fn: func(args ...Object) Object {
@@ -37,6 +39,14 @@ var builtins = map[string]*Builtin{
 			arr.Elements = append(arr.Elements, args[1])
 			//return &Array{Elements: newElements}
 			return arr
+		},
+	},
+	"puts": {
+		Fn: func(args ...Object) Object {
+			for _, arg := range args {
+				fmt.Println(arg.Inspect())
+			}
+			return NULL_OBJ
 		},
 	},
 }
